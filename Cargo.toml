@@ -1,0 +1,11 @@
+[package]
+name = "zero_one"
+version = "0.4.0"
+edition = "2024"
+
+[dependencies]
+libc = "0.2"
+
+[[bin]]
+name = "01"
+path = "src/main.rs"
