@@ -2,9 +2,29 @@ mod parser;
 mod platform;
 
 use std::env;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::fs;
+use std::path::Path;
 use std::process::{self, Command};
+
+/// Accept only files whose extension is exactly `.01`.
+fn validate_01_path(path: &OsStr) -> Result<(), String> {
+    let extension = Path::new(path).extension().ok_or_else(|| {
+        format!(
+            "invalid file extension: {} (expected .01)",
+            path.to_string_lossy()
+        )
+    })?;
+
+    if extension != OsStr::new("01") {
+        return Err(format!(
+            "invalid file extension: {} (expected .01)",
+            path.to_string_lossy()
+        ));
+    }
+
+    Ok(())
+}
 
 fn print_help() {
     println!(
@@ -42,6 +62,8 @@ Important:
 }
 
 fn check_file(path: &OsString) -> Result<usize, String> {
+    validate_01_path(path)?;
+
     let source = fs::read_to_string(path)
         .map_err(|e| format!("Cannot read {}: {}", path.to_string_lossy(), e))?;
 
@@ -57,6 +79,11 @@ fn check_file(path: &OsString) -> Result<usize, String> {
 }
 
 fn launch_child(path: OsString, args: Vec<OsString>) -> i32 {
+    if let Err(error) = validate_01_path(&path) {
+        eprintln!("01: {}", error);
+        return 2;
+    }
+
     let executable = match env::current_exe() {
         Ok(path) => path,
         Err(error) => {
@@ -81,6 +108,11 @@ fn launch_child(path: OsString, args: Vec<OsString>) -> i32 {
 }
 
 fn run_child(path: OsString, args: Vec<OsString>) -> i32 {
+    if let Err(error) = validate_01_path(&path) {
+        eprintln!("01: {}", error);
+        return 126;
+    }
+
     let source = match fs::read_to_string(&path) {
         Ok(source) => source,
         Err(error) => {
